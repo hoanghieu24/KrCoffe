@@ -5,8 +5,10 @@ import {
   Ban,
   BookOpen,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   CircleUserRound,
   Coffee,
   Copy,
@@ -142,7 +144,12 @@ function App() {
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   // Left Collapsible & Resizable Drawer States
-  const [drawerOpen, setDrawerOpen] = useState<boolean>(true)
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth > 768
+    }
+    return true
+  })
   const [drawerWidth, setDrawerWidth] = useState<number>(376)
   const isResizingDrawerRef = useRef<boolean>(false)
 
@@ -279,7 +286,7 @@ function App() {
     const onMove = (ev: MouseEvent) => {
       if (!isResizingDrawerRef.current) return
       const newWidth = window.innerWidth - ev.clientX
-      const clamped = Math.max(300, Math.min(520, newWidth))
+      const clamped = Math.max(300, Math.min(650, newWidth))
       setDrawerWidth(clamped)
     }
     const onUp = () => {
@@ -1553,10 +1560,23 @@ function App() {
         </div>
       </main>
 
+      {/* Mobile Drawer Overlay Backdrop */}
+      {drawerOpen && (
+        <div
+          className="mobile-drawer-backdrop"
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* === COLLAPSIBLE & RESIZABLE RIGHT DRAWER (THANH MENU GÓC PHẢI) === */}
       <aside
         className={`sidebar right-drawer ${drawerOpen ? 'open' : 'collapsed'}`}
-        style={drawerOpen ? { width: `${drawerWidth}px`, flexBasis: `${drawerWidth}px` } : undefined}
+        style={
+          drawerOpen && typeof window !== 'undefined' && window.innerWidth > 768
+            ? { width: `${drawerWidth}px`, flexBasis: `${drawerWidth}px` }
+            : undefined
+        }
       >
         <div className="side-topline">
           <div className="side-brand-mini">
@@ -1573,7 +1593,7 @@ function App() {
           </button>
         </div>
 
-        <div className="side-nav grid-nav" role="navigation" aria-label="Các khu vực chức năng">
+        <div className="side-nav" role="navigation" aria-label="Các khu vực chức năng">
           {navItems.map(({ id, label, iconUrl }) => (
             <button
               key={id}
@@ -1800,83 +1820,103 @@ function App() {
           )}
         </section>
 
-        {/* === BOTTOM COMPACT STATUS STRIP (CHỖ NGỒI & TOPIK LEVEL TIẾT KIỆM KHÔNG GIAN) === */}
-        <div className="sidebar-compact-status-row">
-          <div className="status-mini-cell seat-cell" title={occupiedBySelf ? `Bàn: ${myTableId}` : 'Chỗ ngồi trong quán'}>
-            <span className="mini-cell-icon"><AssetIcon src={UI_ICONS.chair} size={15} /></span>
-            <div className="mini-cell-body">
-              <strong>{occupiedBySelf ? `${occupiedBySelf.id}` : 'Đi dạo'}</strong>
-              <small>{occupiedBySelf ? `${myTableId ?? ''}` : `${30 - occupiedSeats} ghế trống`}</small>
+        <div className="seat-status-card">
+          <div className="seat-status-top">
+            <span className="seat-icon"><AssetIcon src={UI_ICONS.chair} size={22} /></span>
+            <span>
+              <strong>Chỗ ngồi hiện tại</strong>
+              <small>{occupiedBySelf ? `${occupiedBySelf.id} · ${myTableId ?? ''}` : 'Đang đứng đi dạo'}</small>
+            </span>
+            <span className="seat-open"><i />{30 - occupiedSeats} trống</span>
+          </div>
+          {snapshot.seated ? (
+            <button className="stand-button" onClick={() => gameRef.current?.events.emit('stand-command')}>
+              <ArrowUpRight size={15} /> Đứng dậy &amp; đi dạo (E)
+            </button>
+          ) : (
+            <div className="seat-note"><span>✦</span> Lại gần ghế trống và nhấn phím E để ngồi</div>
+          )}
+        </div>
+
+        <button className="level-card" onClick={() => setActiveNav('learn')} title="Xem tiến độ tự học & Thành tích">
+          <div className="level-star"><AssetIcon src={UI_ICONS.star} size={24} /></div>
+          <div className="level-info">
+            <span>
+              <strong>{topikLevel}</strong>
+              <b>Lv. {learningProfile.levelNum}</b>
+            </span>
+            <small>
+              {xpInCurrentLevel} / 100 XP · {learningProfile.wordsLearnedIds.length} từ thuộc
+            </small>
+            <div className="xp-track">
+              <i style={{ width: `${Math.max(6, xpInCurrentLevel)}%` }} />
             </div>
-            {snapshot.seated && (
+          </div>
+          <ChevronDown size={15} />
+        </button>
+
+        {/* === PHẦN ỦNG HỘ NHÀ PHÁT TRIỂN & Ô GÓP Ý (DƯỚI CÙNG KHUNG MENU) === */}
+        <div className="sidebar-support-box">
+          <div className="support-dev-card">
+            <div className="support-dev-header">
+              <span className="support-heart-badge">
+                <Heart size={13} fill="#e07a5f" color="#e07a5f" />
+              </span>
+              <strong>Ủng hộ nhà phát triển (Tùy tâm)</strong>
+              {showDonation && (
+                <button
+                  type="button"
+                  className="support-hide-btn"
+                  onClick={() => setShowDonation(false)}
+                  title="Ẩn STK"
+                >
+                  Ẩn <ChevronUp size={12} />
+                </button>
+              )}
+            </div>
+            <p className="support-dev-desc">
+              Dự án 100% miễn phí &amp; không có quảng cáo. Mọi sự ủng hộ đều là động lực lớn để duy trì máy chủ! (Tùy tâm, không bắt buộc)
+            </p>
+
+            {!showDonation ? (
               <button
                 type="button"
-                className="stand-mini-btn"
-                onClick={() => gameRef.current?.events.emit('stand-command')}
-                title="Đứng dậy (E)"
+                className="support-reveal-btn"
+                onClick={() => setShowDonation(true)}
+                title="Bấm để xem số tài khoản ủng hộ"
               >
-                Đứng (E)
+                <Heart size={12} fill="#e07a5f" color="#e07a5f" />
+                <span>Bấm để hiển thị STK ☕</span>
+                <ChevronDown size={13} />
               </button>
+            ) : (
+              <div className="support-bank-pill">
+                <div className="bank-meta">
+                  <span className="bank-num">STK: <b>9867198647</b></span>
+                  <span className="bank-owner">Hoàng Văn Hiếu</span>
+                </div>
+                <button
+                  type="button"
+                  className="bank-copy-btn"
+                  onClick={handleCopyStk}
+                  title="Bấm để sao chép số tài khoản"
+                >
+                  {copiedStk ? <Check size={12} color="#8cc985" /> : <Copy size={12} />}
+                  <span>{copiedStk ? 'Đã chép' : 'Sao chép'}</span>
+                </button>
+              </div>
             )}
           </div>
 
           <button
             type="button"
-            className="status-mini-cell level-cell"
-            onClick={() => setActiveNav('learn')}
-            title="Xem tiến độ tự học & Thành tích"
+            className="feedback-trigger-btn"
+            onClick={() => setFeedbackModalOpen(true)}
+            title="Gửi góp ý, báo lỗi hoặc đề xuất ý tưởng cho quán"
           >
-            <span className="mini-cell-icon star"><AssetIcon src={UI_ICONS.star} size={15} /></span>
-            <div className="mini-cell-body">
-              <strong>{topikLevel}</strong>
-              <small>Lv.{learningProfile.levelNum} · {xpInCurrentLevel}XP</small>
-            </div>
-            <ChevronRight size={13} className="mini-arrow" />
+            <MessageSquareQuote size={14} />
+            <span>Góp ý cho nhà phát triển 💌</span>
           </button>
-        </div>
-
-        {/* === BOTTOM COMPACT ACTION STRIP: ỦNG HỘ STK & GÓP Ý === */}
-        <div className="sidebar-support-box">
-          <div className="sidebar-action-strip">
-            <button
-              type="button"
-              className={`compact-action-pill support-pill ${showDonation ? 'active' : ''}`}
-              onClick={() => setShowDonation((prev) => !prev)}
-              title="Bấm để xem/ẩn STK ủng hộ nhà phát triển (Tùy tâm)"
-            >
-              <Heart size={12} fill="#e07a5f" color="#e07a5f" />
-              <span>{showDonation ? 'Ẩn STK ▴' : 'Ủng hộ dev ☕ ▾'}</span>
-            </button>
-
-            <button
-              type="button"
-              className="compact-action-pill feedback-pill"
-              onClick={() => setFeedbackModalOpen(true)}
-              title="Gửi góp ý, báo lỗi hoặc đề xuất ý tưởng cho quán"
-            >
-              <MessageSquareQuote size={13} />
-              <span>Góp ý quán 💌</span>
-            </button>
-          </div>
-
-          {/* HIỂN THỊ STK KHI ĐƯỢC BẤM */}
-          {showDonation && (
-            <div className="sidebar-stk-revealed-tray">
-              <div className="stk-meta-row">
-                <span className="stk-num">STK: <b>9867198647</b></span>
-                <span className="stk-owner">Hoàng Văn Hiếu</span>
-              </div>
-              <button
-                type="button"
-                className="stk-copy-btn"
-                onClick={handleCopyStk}
-                title="Sao chép số tài khoản"
-              >
-                {copiedStk ? <Check size={12} color="#8cc985" /> : <Copy size={12} />}
-                <span>{copiedStk ? 'Đã chép' : 'Sao chép'}</span>
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Drag-Resize Handle on Left Edge of Right Drawer */}
