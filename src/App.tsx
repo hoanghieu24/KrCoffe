@@ -5,10 +5,8 @@ import {
   Ban,
   BookOpen,
   Check,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   CircleUserRound,
   Coffee,
   Copy,
@@ -1712,26 +1710,13 @@ function App() {
                 ))}
                 <div ref={messagesEndRef} />
               </div>
-              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', padding: '0 12px 6px' }}>
+              <div className="drawer-chat-quick-strip">
                 {CHARACTER_ACTIONS.map((action) => (
                   <button
                     key={action.id}
                     type="button"
+                    className="drawer-quick-action-btn"
                     onClick={() => triggerCharacterAction(action.id)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '4px 8px',
-                      background: 'rgba(238, 196, 133, 0.1)',
-                      border: '1px solid rgba(238, 196, 133, 0.22)',
-                      borderRadius: '8px',
-                      color: '#f5eee6',
-                      fontSize: '11px',
-                      fontWeight: 650,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
                     title={action.name}
                   >
                     <span>{action.icon}</span> {action.label}
@@ -1815,103 +1800,83 @@ function App() {
           )}
         </section>
 
-        <div className="seat-status-card">
-          <div className="seat-status-top">
-            <span className="seat-icon"><AssetIcon src={UI_ICONS.chair} size={22} /></span>
-            <span>
-              <strong>Chỗ ngồi hiện tại</strong>
-              <small>{occupiedBySelf ? `${occupiedBySelf.id} · ${myTableId ?? ''}` : 'Đang đứng đi dạo'}</small>
-            </span>
-            <span className="seat-open"><i />{30 - occupiedSeats} trống</span>
-          </div>
-          {snapshot.seated ? (
-            <button className="stand-button" onClick={() => gameRef.current?.events.emit('stand-command')}>
-              <ArrowUpRight size={15} /> Đứng dậy &amp; đi dạo (E)
-            </button>
-          ) : (
-            <div className="seat-note"><span>✦</span> Lại gần ghế trống và nhấn phím E để ngồi</div>
-          )}
-        </div>
-
-        <button className="level-card" onClick={() => setActiveNav('learn')} title="Xem tiến độ tự học & Thành tích">
-          <div className="level-star"><AssetIcon src={UI_ICONS.star} size={24} /></div>
-          <div className="level-info">
-            <span>
-              <strong>{topikLevel}</strong>
-              <b>Lv. {learningProfile.levelNum}</b>
-            </span>
-            <small>
-              {xpInCurrentLevel} / 100 XP · {learningProfile.wordsLearnedIds.length} từ thuộc
-            </small>
-            <div className="xp-track">
-              <i style={{ width: `${Math.max(6, xpInCurrentLevel)}%` }} />
+        {/* === BOTTOM COMPACT STATUS STRIP (CHỖ NGỒI & TOPIK LEVEL TIẾT KIỆM KHÔNG GIAN) === */}
+        <div className="sidebar-compact-status-row">
+          <div className="status-mini-cell seat-cell" title={occupiedBySelf ? `Bàn: ${myTableId}` : 'Chỗ ngồi trong quán'}>
+            <span className="mini-cell-icon"><AssetIcon src={UI_ICONS.chair} size={15} /></span>
+            <div className="mini-cell-body">
+              <strong>{occupiedBySelf ? `${occupiedBySelf.id}` : 'Đi dạo'}</strong>
+              <small>{occupiedBySelf ? `${myTableId ?? ''}` : `${30 - occupiedSeats} ghế trống`}</small>
             </div>
-          </div>
-          <ChevronDown size={15} />
-        </button>
-
-        {/* === PHẦN ỦNG HỘ NHÀ PHÁT TRIỂN & Ô GÓP Ý (DƯỚI CÙNG KHUNG MENU) === */}
-        <div className="sidebar-support-box">
-          <div className="support-dev-card">
-            <div className="support-dev-header">
-              <span className="support-heart-badge">
-                <Heart size={13} fill="#e07a5f" color="#e07a5f" />
-              </span>
-              <strong>Ủng hộ nhà phát triển (Tùy tâm)</strong>
-              {showDonation && (
-                <button
-                  type="button"
-                  className="support-hide-btn"
-                  onClick={() => setShowDonation(false)}
-                  title="Ẩn STK"
-                >
-                  Ẩn <ChevronUp size={12} />
-                </button>
-              )}
-            </div>
-            <p className="support-dev-desc">
-              Dự án 100% miễn phí &amp; không có quảng cáo. Mọi sự ủng hộ đều là động lực lớn để duy trì máy chủ! (Tùy tâm, không bắt buộc)
-            </p>
-
-            {!showDonation ? (
+            {snapshot.seated && (
               <button
                 type="button"
-                className="support-reveal-btn"
-                onClick={() => setShowDonation(true)}
-                title="Bấm để xem số tài khoản ủng hộ"
+                className="stand-mini-btn"
+                onClick={() => gameRef.current?.events.emit('stand-command')}
+                title="Đứng dậy (E)"
               >
-                <Heart size={12} fill="#e07a5f" color="#e07a5f" />
-                <span>Bấm để hiển thị STK ☕</span>
-                <ChevronDown size={13} />
+                Đứng (E)
               </button>
-            ) : (
-              <div className="support-bank-pill">
-                <div className="bank-meta">
-                  <span className="bank-num">STK: <b>9867198647</b></span>
-                  <span className="bank-owner">Hoàng Văn Hiếu</span>
-                </div>
-                <button
-                  type="button"
-                  className="bank-copy-btn"
-                  onClick={handleCopyStk}
-                  title="Bấm để sao chép số tài khoản"
-                >
-                  {copiedStk ? <Check size={12} color="#8cc985" /> : <Copy size={12} />}
-                  <span>{copiedStk ? 'Đã chép' : 'Sao chép'}</span>
-                </button>
-              </div>
             )}
           </div>
 
           <button
             type="button"
-            className="feedback-trigger-btn"
-            onClick={() => setFeedbackModalOpen(true)}
-            title="Gửi góp ý, báo lỗi hoặc đề xuất ý tưởng cho quán"
+            className="status-mini-cell level-cell"
+            onClick={() => setActiveNav('learn')}
+            title="Xem tiến độ tự học & Thành tích"
           >
-            <MessageSquareQuote size={14} />
-            <span>Góp ý cho nhà phát triển 💌</span>
+            <span className="mini-cell-icon star"><AssetIcon src={UI_ICONS.star} size={15} /></span>
+            <div className="mini-cell-body">
+              <strong>{topikLevel}</strong>
+              <small>Lv.{learningProfile.levelNum} · {xpInCurrentLevel}XP</small>
+            </div>
+            <ChevronRight size={13} className="mini-arrow" />
           </button>
+        </div>
+
+        {/* === BOTTOM COMPACT ACTION STRIP: ỦNG HỘ STK & GÓP Ý === */}
+        <div className="sidebar-support-box">
+          <div className="sidebar-action-strip">
+            <button
+              type="button"
+              className={`compact-action-pill support-pill ${showDonation ? 'active' : ''}`}
+              onClick={() => setShowDonation((prev) => !prev)}
+              title="Bấm để xem/ẩn STK ủng hộ nhà phát triển (Tùy tâm)"
+            >
+              <Heart size={12} fill="#e07a5f" color="#e07a5f" />
+              <span>{showDonation ? 'Ẩn STK ▴' : 'Ủng hộ dev ☕ ▾'}</span>
+            </button>
+
+            <button
+              type="button"
+              className="compact-action-pill feedback-pill"
+              onClick={() => setFeedbackModalOpen(true)}
+              title="Gửi góp ý, báo lỗi hoặc đề xuất ý tưởng cho quán"
+            >
+              <MessageSquareQuote size={13} />
+              <span>Góp ý quán 💌</span>
+            </button>
+          </div>
+
+          {/* HIỂN THỊ STK KHI ĐƯỢC BẤM */}
+          {showDonation && (
+            <div className="sidebar-stk-revealed-tray">
+              <div className="stk-meta-row">
+                <span className="stk-num">STK: <b>9867198647</b></span>
+                <span className="stk-owner">Hoàng Văn Hiếu</span>
+              </div>
+              <button
+                type="button"
+                className="stk-copy-btn"
+                onClick={handleCopyStk}
+                title="Sao chép số tài khoản"
+              >
+                {copiedStk ? <Check size={12} color="#8cc985" /> : <Copy size={12} />}
+                <span>{copiedStk ? 'Đã chép' : 'Sao chép'}</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Drag-Resize Handle on Left Edge of Right Drawer */}
