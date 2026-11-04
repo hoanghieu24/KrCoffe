@@ -924,6 +924,8 @@ export function CafeMenuModal({
   onOrder: (item: CafeMenuItem) => void
   onOpenFeedback?: () => void
 }) {
+  const [showDonation, setShowDonation] = useState(false)
+  const [copied, setCopied] = useState(false)
   return (
     <div
       className="modal-backdrop"
@@ -987,19 +989,41 @@ export function CafeMenuModal({
               <small>Tùy tâm, không bắt buộc · Dự án 100% phi lợi nhuận &amp; không quảng cáo</small>
             </div>
           </div>
-          <div className="menu-support-bank">
-            <span>STK: <b>9867198647</b></span>
-            <span>Chủ TK: <b>Hoàng Văn Hiếu</b></span>
-            <button
-              type="button"
-              className="menu-copy-btn"
-              onClick={() => {
-                navigator.clipboard?.writeText('9867198647')
-                alert('Đã sao chép STK: 9867198647 (Hoàng Văn Hiếu) 💖 Cảm ơn bạn rất nhiều!')
-              }}
-            >
-              <Copy size={12} /> Sao chép STK
-            </button>
+          <div className="menu-support-actions">
+            {!showDonation ? (
+              <button
+                type="button"
+                className="menu-donate-reveal-btn"
+                onClick={() => setShowDonation(true)}
+              >
+                <Heart size={12} fill="#e07a5f" color="#e07a5f" />
+                <span>Bấm để hiển thị STK ☕</span>
+              </button>
+            ) : (
+              <div className="menu-support-bank">
+                <span>STK: <b>9867198647</b></span>
+                <span>Chủ TK: <b>Hoàng Văn Hiếu</b></span>
+                <button
+                  type="button"
+                  className="menu-copy-btn"
+                  onClick={() => {
+                    navigator.clipboard?.writeText('9867198647')
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2500)
+                  }}
+                >
+                  {copied ? <Check size={12} color="#8cc985" /> : <Copy size={12} />}
+                  <span>{copied ? 'Đã chép' : 'Sao chép STK'}</span>
+                </button>
+                <button
+                  type="button"
+                  className="menu-hide-btn"
+                  onClick={() => setShowDonation(false)}
+                >
+                  Ẩn STK
+                </button>
+              </div>
+            )}
             {onOpenFeedback && (
               <button
                 type="button"

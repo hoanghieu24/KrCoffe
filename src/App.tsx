@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   CircleUserRound,
   Coffee,
   Copy,
@@ -171,6 +172,7 @@ function App() {
   const [feedbackContent, setFeedbackContent] = useState('')
   const [submittingFeedback, setSubmittingFeedback] = useState(false)
   const [copiedStk, setCopiedStk] = useState(false)
+  const [showDonation, setShowDonation] = useState(false)
   const [emoteBarOpen, setEmoteBarOpen] = useState(false)
   const [notice, setNotice] = useState<Notice | null>({
     text: 'Chào mừng đến K-CHILL Café! Ngồi cùng bàn để chat riêng, đọc câu chuyện & chơi 6 Mini-Games nhé ✨',
@@ -1856,25 +1858,49 @@ function App() {
                 <Heart size={13} fill="#e07a5f" color="#e07a5f" />
               </span>
               <strong>Ủng hộ nhà phát triển (Tùy tâm)</strong>
+              {showDonation && (
+                <button
+                  type="button"
+                  className="support-hide-btn"
+                  onClick={() => setShowDonation(false)}
+                  title="Ẩn STK"
+                >
+                  Ẩn <ChevronUp size={12} />
+                </button>
+              )}
             </div>
             <p className="support-dev-desc">
               Dự án 100% miễn phí &amp; không có quảng cáo. Mọi sự ủng hộ đều là động lực lớn để duy trì máy chủ! (Tùy tâm, không bắt buộc)
             </p>
-            <div className="support-bank-pill">
-              <div className="bank-meta">
-                <span className="bank-num">STK: <b>9867198647</b></span>
-                <span className="bank-owner">Hoàng Văn Hiếu</span>
-              </div>
+
+            {!showDonation ? (
               <button
                 type="button"
-                className="bank-copy-btn"
-                onClick={handleCopyStk}
-                title="Bấm để sao chép số tài khoản"
+                className="support-reveal-btn"
+                onClick={() => setShowDonation(true)}
+                title="Bấm để xem số tài khoản ủng hộ"
               >
-                {copiedStk ? <Check size={12} color="#8cc985" /> : <Copy size={12} />}
-                <span>{copiedStk ? 'Đã chép' : 'Sao chép'}</span>
+                <Heart size={12} fill="#e07a5f" color="#e07a5f" />
+                <span>Bấm để hiển thị STK ☕</span>
+                <ChevronDown size={13} />
               </button>
-            </div>
+            ) : (
+              <div className="support-bank-pill">
+                <div className="bank-meta">
+                  <span className="bank-num">STK: <b>9867198647</b></span>
+                  <span className="bank-owner">Hoàng Văn Hiếu</span>
+                </div>
+                <button
+                  type="button"
+                  className="bank-copy-btn"
+                  onClick={handleCopyStk}
+                  title="Bấm để sao chép số tài khoản"
+                >
+                  {copiedStk ? <Check size={12} color="#8cc985" /> : <Copy size={12} />}
+                  <span>{copiedStk ? 'Đã chép' : 'Sao chép'}</span>
+                </button>
+              </div>
+            )}
           </div>
 
           <button

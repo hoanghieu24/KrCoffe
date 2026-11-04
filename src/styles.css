@@ -4535,6 +4535,79 @@ button:focus-visible, input:focus-visible { outline: 2px solid #a3c9ff; outline-
   color: #bfaea2;
 }
 
+.support-hide-btn, .menu-hide-btn {
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  color: #ad9a8d;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.support-hide-btn:hover, .menu-hide-btn:hover {
+  color: #f7eee7;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.support-reveal-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 7px 10px;
+  background: rgba(224, 122, 95, 0.14);
+  border: 1px dashed rgba(224, 122, 95, 0.38);
+  border-radius: 9px;
+  color: #f3d4c1;
+  font-size: 10.5px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.support-reveal-btn:hover {
+  background: rgba(224, 122, 95, 0.26);
+  border-color: rgba(224, 122, 95, 0.6);
+  color: #ffffff;
+}
+
+.menu-support-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.menu-donate-reveal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  background: rgba(224, 122, 95, 0.15);
+  border: 1px dashed rgba(224, 122, 95, 0.4);
+  border-radius: 7px;
+  color: #f3d4c1;
+  font-size: 10.5px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.menu-donate-reveal-btn:hover {
+  background: rgba(224, 122, 95, 0.28);
+  border-color: rgba(224, 122, 95, 0.65);
+  color: #ffffff;
+}
+
 .support-bank-pill {
   display: flex;
   align-items: center;
