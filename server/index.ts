@@ -289,7 +289,7 @@ app.get('/api/tts/korean', async (req, res) => {
   }
 })
 
-app.get('/api/health', (_req, res) => {
+app.get(['/api/health', '/api/ping'], (_req, res) => {
   res.json({
     ok: true,
     room: MAIN_ROOM,

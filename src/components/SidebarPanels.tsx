@@ -29,6 +29,7 @@ import {
   KOREAN_CAFE_MENU,
   type CafeMenuItem,
 } from '../data/koreanVocabulary'
+import { apiUrl } from '../config'
 import type {
   MusicRoomState,
   PlayerLearningProfile,
@@ -201,7 +202,7 @@ export function MusicRoomPanel({
     const ytId = extractYouTubeId(url)
     if (ytId) {
       setIsInspecting(true)
-      void fetch(`/api/music/inspect?url=${encodeURIComponent(url.trim())}`)
+      void fetch(apiUrl(`/api/music/inspect?url=${encodeURIComponent(url.trim())}`))
         .then((res) => res.json())
         .then((data) => {
           if (data.ok && data.info) {

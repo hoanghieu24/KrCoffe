@@ -1,4 +1,5 @@
 import { io, type Socket } from 'socket.io-client'
+import { BACKEND_URL } from '../config'
 import type {
   AdminAnnouncement,
   CafeSeat,
@@ -245,7 +246,7 @@ class MultiplayerClient {
     saveTabSession(this.currentProfile)
 
     if (!this.socket) {
-      this.socket = io({
+      this.socket = io(BACKEND_URL || undefined, {
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionDelay: 600,

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import type { MusicTrackDef } from '../data/koreanVocabulary'
 import { extractYouTubeId } from '../services/cafeMusicEngine'
+import { apiUrl, BACKEND_URL } from '../config'
 import { getTableIdForSeat } from '../domain/seatUtils'
 import type { AdminAnnouncement, CafeSeat, MusicRoomState, RoomPlayerState } from '../domain/types'
 import type { MiniGameLobbyRoom } from '../games/types'
@@ -73,7 +74,7 @@ export function AdminDashboard() {
 
   const fetchOverview = async () => {
     try {
-      const res = await fetch('/api/admin/overview')
+      const res = await fetch(apiUrl('/api/admin/overview'))
       const json = (await res.json()) as { ok: boolean; overview?: AdminOverviewData }
       if (json.ok && json.overview) setOverview(json.overview)
     } catch {
@@ -83,7 +84,7 @@ export function AdminDashboard() {
 
   useEffect(() => {
     void fetchOverview()
-    const sock = io({ transports: ['websocket', 'polling'] })
+    const sock = io(BACKEND_URL || undefined, { transports: ['websocket', 'polling'] })
     sock.on('connect', () => {
       setConnected(true)
       sock.emit('admin:subscribe', (res: { ok?: boolean; overview?: AdminOverviewData }) => {
@@ -101,7 +102,7 @@ export function AdminDashboard() {
 
   const postAdminMusic = async (body: Record<string, unknown>, okMessage?: string) => {
     try {
-      const res = await fetch('/api/admin/music', {
+      const res = await fetch(apiUrl('/api/admin/music'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -137,7 +138,7 @@ export function AdminDashboard() {
     if (!ytId) return
     setInspectingYt(true)
     try {
-      const res = await fetch(`/api/admin/music-inspect?url=${encodeURIComponent(url)}`)
+      const res = await fetch(apiUrl(`/api/admin/music-inspect?url=${encodeURIComponent(url)}`))
       const data = (await res.json()) as {
         ok: boolean
         info?: { title?: string; author?: string; durationSec: number }
@@ -198,7 +199,7 @@ export function AdminDashboard() {
 
   const handleUserAction = async (userId: string, username: string, action: 'force-stand' | 'kick') => {
     try {
-      const res = await fetch('/api/admin/user-action', {
+      const res = await fetch(apiUrl('/api/admin/user-action'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, action }),
@@ -221,7 +222,7 @@ export function AdminDashboard() {
     e.preventDefault()
     if (!announceText.trim()) return
     try {
-      const res = await fetch('/api/admin/announce', {
+      const res = await fetch(apiUrl('/api/admin/announce'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: announceText.trim() }),
