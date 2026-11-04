@@ -13,6 +13,8 @@ import {
   mutateLearningProfile,
   saveChatMessage,
   savePlayerProfile,
+  saveFeedback,
+  loadRecentFeedback,
 } from './store.ts'
 import { VoiceSessionManager } from './voiceManager.ts'
 import { GameSessionManager } from './gameManager.ts'
@@ -164,6 +166,7 @@ function buildAdminOverview() {
     seats,
     miniGameRooms: gameCenter.getAllRoomsSummary(),
     recentAnnouncements: recentAnnouncements.slice(-10),
+    feedbackList: loadRecentFeedback(50),
   }
 }
 
@@ -392,6 +395,20 @@ app.post('/api/admin/announce', (req, res) => {
   io.to(MAIN_ROOM).emit('admin:announcement', ann)
   broadcastAdminOverview()
   res.json({ ok: true, announcement: ann, overview: buildAdminOverview() })
+})
+
+app.post('/api/feedback', (req, res) => {
+  const { userId, username, content } = req.body ?? {}
+  const cleanContent = String(content || '').trim().slice(0, 1000)
+  if (!cleanContent) {
+    res.status(400).json({ ok: false, reason: 'Nội dung góp ý không được để trống.' })
+    return
+  }
+  const cleanUsername = String(username || 'Khách K-CHILL').trim().slice(0, 50)
+  const cleanUserId = String(userId || 'anonymous').trim().slice(0, 60)
+  const item = saveFeedback(cleanUserId, cleanUsername, cleanContent)
+  broadcastAdminOverview()
+  res.json({ ok: true, message: 'Cảm ơn bạn đã gửi góp ý cho K-CHILL Café!', feedback: item })
 })
 
 // === SOCKET.IO REALTIME MULTIPLAYER ===
@@ -1304,6 +1321,23 @@ io.on('connection', (socket) => {
           })
         }, 1100)
       }
+    },
+  )
+
+  socket.on(
+    'feedback:send',
+    (payload: { content: string; username?: string }, ack?: (res: { ok: boolean; message?: string; reason?: string }) => void) => {
+      const cleanContent = String(payload?.content || '').trim().slice(0, 1000)
+      if (!cleanContent) {
+        ack?.({ ok: false, reason: 'Nội dung góp ý không được để trống.' })
+        return
+      }
+      const userId = room.getUserBySocket(socket.id)
+      const user = userId ? room.getPlayer(userId) : undefined
+      const username = user?.username || payload?.username || 'Khách K-CHILL'
+      saveFeedback(userId || socket.id, username, cleanContent)
+      broadcastAdminOverview()
+      ack?.({ ok: true, message: 'Đã gửi góp ý thành công! Cảm ơn bạn rất nhiều 💖' })
     },
   )
 

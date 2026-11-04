@@ -8,9 +8,11 @@ import {
   Clock,
   CloudRain,
   Coffee,
+  Copy,
   Disc3,
   Gamepad2,
   Heart,
+  MessageSquareQuote,
   Music,
   Pause,
   Play,
@@ -916,9 +918,11 @@ export function SettingsSidebarPanel({
 export function CafeMenuModal({
   onClose,
   onOrder,
+  onOpenFeedback,
 }: {
   onClose: () => void
   onOrder: (item: CafeMenuItem) => void
+  onOpenFeedback?: () => void
 }) {
   return (
     <div
@@ -972,6 +976,43 @@ export function CafeMenuModal({
               </div>
             )
           })}
+        </div>
+
+        {/* Support & Feedback Section at bottom of Cafe Menu */}
+        <div className="cafe-menu-support-footer">
+          <div className="menu-support-left">
+            <span className="menu-heart-icon"><Heart size={14} fill="#e07a5f" color="#e07a5f" /></span>
+            <div>
+              <strong>Ủng hộ nhà phát triển (Tùy tâm) ☕</strong>
+              <small>Tùy tâm, không bắt buộc · Dự án 100% phi lợi nhuận &amp; không quảng cáo</small>
+            </div>
+          </div>
+          <div className="menu-support-bank">
+            <span>STK: <b>9867198647</b></span>
+            <span>Chủ TK: <b>Hoàng Văn Hiếu</b></span>
+            <button
+              type="button"
+              className="menu-copy-btn"
+              onClick={() => {
+                navigator.clipboard?.writeText('9867198647')
+                alert('Đã sao chép STK: 9867198647 (Hoàng Văn Hiếu) 💖 Cảm ơn bạn rất nhiều!')
+              }}
+            >
+              <Copy size={12} /> Sao chép STK
+            </button>
+            {onOpenFeedback && (
+              <button
+                type="button"
+                className="menu-feedback-btn"
+                onClick={() => {
+                  onClose()
+                  onOpenFeedback()
+                }}
+              >
+                <MessageSquareQuote size={12} /> Góp ý quán
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

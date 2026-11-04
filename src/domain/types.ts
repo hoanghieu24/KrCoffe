@@ -268,3 +268,11 @@ export type AdminAnnouncement = {
   text: string
   createdAt: string
 }
+
+export type UserFeedbackItem = {
+  id: string
+  userId: string
+  username: string
+  content: string
+  createdAt: number
+}

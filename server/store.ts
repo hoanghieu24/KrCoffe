@@ -40,6 +40,7 @@ function createFallbackDb(storeDir: string): DatabaseLike {
     learning_profiles: {} as Record<string, any>,
     game_results: [] as any[],
     music_queue: [] as any[],
+    user_feedback: [] as any[],
   }
 
   if (fs.existsSync(jsonPath)) {
@@ -200,6 +201,24 @@ function createFallbackDb(storeDir: string): DatabaseLike {
           all: () => [],
         }
       }
+      if (s.startsWith('insert into user_feedback')) {
+        return {
+          run: (id: string, user_id: string, username: string, content: string, created_at: number) => {
+            state.user_feedback.unshift({ id, user_id, username, content, created_at })
+            if (state.user_feedback.length > 200) state.user_feedback.pop()
+            scheduleSave()
+          },
+          get: () => undefined,
+          all: () => [],
+        }
+      }
+      if (s.includes('from user_feedback')) {
+        return {
+          run: () => {},
+          get: () => undefined,
+          all: (limit: number = 50) => state.user_feedback.slice(0, Number(limit) || 50),
+        }
+      }
       return { run: () => {}, get: () => undefined, all: () => [] }
     },
   }
@@ -294,6 +313,14 @@ db.exec(`
     suggested_by TEXT NOT NULL,
     votes INTEGER NOT NULL DEFAULT 1,
     audio_url TEXT,
+    created_at INTEGER NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS user_feedback (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    username TEXT NOT NULL,
+    content TEXT NOT NULL,
     created_at INTEGER NOT NULL
   );
 `)
@@ -726,3 +753,53 @@ export function loadRecentRoomMessages(): ChatMessagePayload[] {
     },
   ]
 }
+
+const insertFeedbackStmt = db.prepare(`
+  INSERT INTO user_feedback (id, user_id, username, content, created_at)
+  VALUES (?, ?, ?, ?, ?)
+`)
+
+const selectFeedbackStmt = db.prepare(`
+  SELECT id, user_id, username, content, created_at
+  FROM user_feedback
+  ORDER BY created_at DESC
+  LIMIT ?
+`)
+
+export function saveFeedback(userId: string, username: string, content: string) {
+  const item = {
+    id: `fb-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    userId,
+    username,
+    content,
+    createdAt: Date.now(),
+  }
+  try {
+    insertFeedbackStmt.run(item.id, item.userId, item.username, item.content, item.createdAt)
+  } catch (e) {
+    console.error('Failed to save feedback:', e)
+  }
+  return item
+}
+
+export function loadRecentFeedback(limit = 50) {
+  try {
+    const rows = selectFeedbackStmt.all(limit) as Array<{
+      id: string
+      user_id: string
+      username: string
+      content: string
+      created_at: number
+    }>
+    return rows.map((r) => ({
+      id: r.id,
+      userId: r.user_id,
+      username: r.username,
+      content: r.content,
+      createdAt: r.created_at,
+    }))
+  } catch {
+    return []
+  }
+}
+

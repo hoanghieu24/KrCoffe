@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Armchair,
   Gamepad2,
+  Mail,
   Megaphone,
   Mic,
   Music,
@@ -38,6 +39,7 @@ type AdminOverviewData = {
   seats: CafeSeat[]
   miniGameRooms: MiniGameLobbyRoom[]
   recentAnnouncements: AdminAnnouncement[]
+  feedbackList?: Array<{ id: string; userId: string; username: string; content: string; createdAt: number }>
 }
 
 function decodeHtmlEntities(str: string): string {
@@ -699,6 +701,34 @@ export function AdminDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="admin-sub-block">
+            <h4>
+              <Mail size={15} style={{ verticalAlign: 'middle', marginRight: 6, color: '#f59e0b' }} />
+              Hòm Thư Góp Ý &amp; Đề Xuất Từ Người Dùng ({overview?.feedbackList?.length ?? 0})
+            </h4>
+            {overview?.feedbackList && overview.feedbackList.length > 0 ? (
+              <div className="admin-users-list" style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                {overview.feedbackList.map((fb) => (
+                  <div key={fb.id} className="admin-user-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '11px', color: '#f3c68f' }}>
+                      <strong>💬 {fb.username}</strong>
+                      <small style={{ color: '#a89485' }}>
+                        {new Date(fb.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) +
+                          ' ' +
+                          new Date(fb.createdAt).toLocaleDateString('vi-VN')}
+                      </small>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#f4ede6', whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: 'rgba(0,0,0,0.2)', padding: '6px 10px', borderRadius: '8px', width: '100%' }}>
+                      {fb.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="admin-empty-text">Chưa có góp ý mới nào từ khách.</p>
+            )}
           </div>
         </section>
       </div>

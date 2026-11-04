@@ -10,12 +10,14 @@ import {
   ChevronRight,
   CircleUserRound,
   Coffee,
+  Copy,
   Gamepad2,
   Heart,
   LocateFixed,
   Lock,
   Menu,
   MessageCircle,
+  MessageSquareQuote,
   Mic,
   MicOff,
   PhoneCall,
@@ -47,6 +49,7 @@ import {
   type TopikLevel,
 } from './data/koreanVocabulary'
 import { areSeatsAtSameTable, getPartnerSeatId, getTableIdForSeat } from './domain/seatUtils'
+import { apiUrl } from './config'
 import type {
   AvatarLook,
   CafeSceneEvent,
@@ -164,6 +167,10 @@ function App() {
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [cafeMenuOpen, setCafeMenuOpen] = useState(false)
   const [rulesModalOpen, setRulesModalOpen] = useState(false)
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
+  const [feedbackContent, setFeedbackContent] = useState('')
+  const [submittingFeedback, setSubmittingFeedback] = useState(false)
+  const [copiedStk, setCopiedStk] = useState(false)
   const [emoteBarOpen, setEmoteBarOpen] = useState(false)
   const [notice, setNotice] = useState<Notice | null>({
     text: 'Chào mừng đến K-CHILL Café! Ngồi cùng bàn để chat riêng, đọc câu chuyện & chơi 6 Mini-Games nhé ✨',
@@ -739,6 +746,43 @@ function App() {
     gameRef.current?.events.emit('order-item-command', item.assetKey, item.orderPhraseKo)
     multiplayerClient.orderMenuItem(item.id)
     showNotice(`☕ Đã gọi món: ${item.hangul} (${item.nameVi}) +10 XP!`, 'success')
+  }
+
+  const handleCopyStk = () => {
+    navigator.clipboard?.writeText('9867198647')
+    setCopiedStk(true)
+    showNotice('Đã sao chép STK: 9867198647 (Hoàng Văn Hiếu) 💖 Cảm ơn bạn!', 'success')
+    setTimeout(() => setCopiedStk(false), 2500)
+  }
+
+  const handleSendFeedback = async (e: FormEvent) => {
+    e.preventDefault()
+    const content = feedbackContent.trim()
+    if (!content) return
+    setSubmittingFeedback(true)
+    try {
+      const res = await fetch(apiUrl('/api/feedback'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: myUserId,
+          username: displayName,
+          content,
+        }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        showNotice('Đã gửi góp ý thành công! Nhà phát triển sẽ đọc ngay nhé 💖', 'success')
+        setFeedbackContent('')
+        setFeedbackModalOpen(false)
+      } else {
+        showNotice(data.reason || 'Không thể gửi góp ý.', 'tip')
+      }
+    } catch {
+      showNotice('Không thể kết nối máy chủ để gửi góp ý.', 'tip')
+    } finally {
+      setSubmittingFeedback(false)
+    }
   }
 
   const waveToTablemate = async (targetId: string, targetName: string) => {
@@ -1804,6 +1848,46 @@ function App() {
           <ChevronDown size={15} />
         </button>
 
+        {/* === PHẦN ỦNG HỘ NHÀ PHÁT TRIỂN & Ô GÓP Ý (DƯỚI CÙNG KHUNG MENU) === */}
+        <div className="sidebar-support-box">
+          <div className="support-dev-card">
+            <div className="support-dev-header">
+              <span className="support-heart-badge">
+                <Heart size={13} fill="#e07a5f" color="#e07a5f" />
+              </span>
+              <strong>Ủng hộ nhà phát triển (Tùy tâm)</strong>
+            </div>
+            <p className="support-dev-desc">
+              Dự án 100% miễn phí &amp; không có quảng cáo. Mọi sự ủng hộ đều là động lực lớn để duy trì máy chủ! (Tùy tâm, không bắt buộc)
+            </p>
+            <div className="support-bank-pill">
+              <div className="bank-meta">
+                <span className="bank-num">STK: <b>9867198647</b></span>
+                <span className="bank-owner">Hoàng Văn Hiếu</span>
+              </div>
+              <button
+                type="button"
+                className="bank-copy-btn"
+                onClick={handleCopyStk}
+                title="Bấm để sao chép số tài khoản"
+              >
+                {copiedStk ? <Check size={12} color="#8cc985" /> : <Copy size={12} />}
+                <span>{copiedStk ? 'Đã chép' : 'Sao chép'}</span>
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="feedback-trigger-btn"
+            onClick={() => setFeedbackModalOpen(true)}
+            title="Gửi góp ý, báo lỗi hoặc đề xuất ý tưởng cho quán"
+          >
+            <MessageSquareQuote size={14} />
+            <span>Góp ý cho nhà phát triển 💌</span>
+          </button>
+        </div>
+
         {/* Drag-Resize Handle on Left Edge of Right Drawer */}
         <div
           className="drawer-resize-handle left-handle"
@@ -2060,7 +2144,56 @@ function App() {
         <CafeMenuModal
           onClose={() => setCafeMenuOpen(false)}
           onOrder={handleOrderMenuItem}
+          onOpenFeedback={() => setFeedbackModalOpen(true)}
         />
+      )}
+
+      {/* User Feedback Modal */}
+      {feedbackModalOpen && (
+        <div
+          className="modal-backdrop"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setFeedbackModalOpen(false)
+          }}
+        >
+          <div className="avatar-modal feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
+            <button className="modal-close" onClick={() => setFeedbackModalOpen(false)} aria-label="Đóng">
+              <X size={18} />
+            </button>
+            <div className="modal-kicker">
+              <MessageSquareQuote size={15} /> HÒM THƯ GÓP Ý · 의견 보내기
+            </div>
+            <h2 id="feedback-title">Góp ý cho Nhà phát triển 💌</h2>
+            <p>
+              Bạn muốn quán có thêm tính năng gì, bài hát nào, hay gặp bất kỳ lỗi gì khi học tiếng Hàn? Mọi ý kiến đóng góp của bạn đều giúp K-CHILL Café ngày càng hoàn thiện hơn!
+            </p>
+
+            <form onSubmit={handleSendFeedback} className="feedback-form">
+              <div className="feedback-sender-badge">
+                <span>Người gửi:</span>
+                <strong>{displayName}</strong>
+                <small>({topikLevel})</small>
+              </div>
+
+              <textarea
+                className="feedback-textarea"
+                rows={4}
+                value={feedbackContent}
+                onChange={(e) => setFeedbackContent(e.target.value)}
+                placeholder="Nhập nội dung góp ý, đề xuất bài hát mới, tính năng mới hoặc báo lỗi tại đây... (Ví dụ: Thêm mini-game ghép câu, playlist nhạc phim Reply 1988...)"
+                maxLength={800}
+                required
+              />
+
+              <div className="feedback-form-actions">
+                <span className="char-count">{feedbackContent.length}/800 ký tự</span>
+                <button type="submit" className="confirm-button" disabled={submittingFeedback || !feedbackContent.trim()}>
+                  {submittingFeedback ? 'Đang gửi...' : 'Gửi góp ý ngay ✨'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* Story Conversation Modal (2 người cùng đọc / 2 người tự đọc) */}
