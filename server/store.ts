@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { DatabaseSync } from 'node:sqlite'
+import { createRequire } from 'node:module'
 import {
   ACHIEVEMENTS_CATALOG,
   DEFAULT_MUSIC_TRACKS,
@@ -19,8 +19,204 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const dataDir = path.join(__dirname, 'data')
 fs.mkdirSync(dataDir, { recursive: true })
 
-const dbPath = path.join(dataDir, 'kchill.sqlite')
-const db = new DatabaseSync(dbPath)
+interface StatementLike {
+  run(...args: any[]): any
+  get(...args: any[]): any
+  all(...args: any[]): any[]
+}
+
+interface DatabaseLike {
+  exec(sql: string): void
+  prepare(sql: string): StatementLike
+}
+
+function createFallbackDb(storeDir: string): DatabaseLike {
+  const jsonPath = path.join(storeDir, 'kchill-store.json')
+  let state = {
+    players: {} as Record<string, any>,
+    chat_messages: [] as any[],
+    voice_invitations: {} as Record<string, any>,
+    voice_sessions: {} as Record<string, any>,
+    learning_profiles: {} as Record<string, any>,
+    game_results: [] as any[],
+    music_queue: [] as any[],
+  }
+
+  if (fs.existsSync(jsonPath)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(jsonPath, 'utf8'))
+      state = { ...state, ...parsed }
+    } catch {
+      // Ignore corrupted JSON and start fresh
+    }
+  }
+
+  let saveTimer: any = null
+  const scheduleSave = () => {
+    if (saveTimer) return
+    saveTimer = setTimeout(() => {
+      saveTimer = null
+      try {
+        fs.writeFileSync(jsonPath, JSON.stringify(state, null, 2), 'utf8')
+      } catch {}
+    }, 2000)
+  }
+
+  return {
+    exec: () => {},
+    prepare: (sql: string): StatementLike => {
+      const s = sql.trim().toLowerCase()
+      if (s.startsWith('insert into players')) {
+        return {
+          run: (user_id: string, username: string, avatar_id: string, topik_level: string, updated_at: string) => {
+            state.players[user_id] = { user_id, username, avatar_id, topik_level, updated_at }
+            scheduleSave()
+          },
+          get: () => undefined,
+          all: () => [],
+        }
+      }
+      if (s.startsWith('insert into chat_messages')) {
+        return {
+          run: (id: string, user_id: string, username: string, avatar_id: string, text: string, scope: string, table_id: string | null, time_label: string, created_at: number) => {
+            state.chat_messages.push({ id, user_id, username, avatar_id, text, scope, table_id, time_label, created_at })
+            if (state.chat_messages.length > 200) state.chat_messages.shift()
+            scheduleSave()
+          },
+          get: () => undefined,
+          all: () => [],
+        }
+      }
+      if (s.includes('from chat_messages')) {
+        return {
+          run: () => {},
+          get: () => undefined,
+          all: () => {
+            return state.chat_messages
+              .filter((m: any) => m.scope === 'room')
+              .slice(-25)
+              .reverse()
+          },
+        }
+      }
+      if (s.startsWith('insert or replace into voice_invitations')) {
+        return {
+          run: (id: string, sender_id: string, receiver_id: string, table_id: string, status: string, created_at: number) => {
+            state.voice_invitations[id] = { id, sender_id, receiver_id, table_id, status, created_at }
+            scheduleSave()
+          },
+          get: () => undefined,
+          all: () => [],
+        }
+      }
+      if (s.startsWith('update voice_invitations')) {
+        return {
+          run: (status: string, id: string) => {
+            if (state.voice_invitations[id]) {
+              state.voice_invitations[id].status = status
+              scheduleSave()
+            }
+          },
+          get: () => undefined,
+          all: () => [],
+        }
+      }
+      if (s.startsWith('insert into voice_sessions')) {
+        return {
+          run: (id: string, table_id: string, host_user_id: string, guest_user_id: string, started_at: number) => {
+            state.voice_sessions[id] = { id, table_id, host_user_id, guest_user_id, status: 'active', started_at, ended_at: null }
+            scheduleSave()
+          },
+          get: () => undefined,
+          all: () => [],
+        }
+      }
+      if (s.startsWith('update voice_sessions')) {
+        return {
+          run: (ended_at: number, id: string) => {
+            if (state.voice_sessions[id]) {
+              state.voice_sessions[id].status = 'ended'
+              state.voice_sessions[id].ended_at = ended_at
+              scheduleSave()
+            }
+          },
+          get: () => undefined,
+          all: () => [],
+        }
+      }
+      if (s.includes('from learning_profiles')) {
+        return {
+          run: () => {},
+          get: (userId: string) => state.learning_profiles[userId],
+          all: () => Object.values(state.learning_profiles),
+        }
+      }
+      if (s.startsWith('insert into learning_profiles')) {
+        return {
+          run: (user_id: string, topik_level: string, xp: number, level_num: number, games_played: number, games_won: number, study_minutes: number, learned_ids_json: string, achievements_json: string, updated_at: number) => {
+            state.learning_profiles[user_id] = {
+              user_id, topik_level, xp, level_num, games_played, games_won, study_minutes, learned_ids_json, achievements_json, updated_at,
+            }
+            scheduleSave()
+          },
+          get: () => undefined,
+          all: () => [],
+        }
+      }
+      if (s.startsWith('insert or replace into game_results')) {
+        return {
+          run: (id: string, game_kind: string, topik_level: string, mode: string, winner_user_id: string | null, players_json: string, created_at: number) => {
+            state.game_results.push({ id, game_kind, topik_level, mode, winner_user_id, players_json, created_at })
+            scheduleSave()
+          },
+          get: () => undefined,
+          all: () => [],
+        }
+      }
+      if (s.includes('from music_queue')) {
+        return {
+          run: () => {},
+          get: () => undefined,
+          all: () => [...state.music_queue].sort((a: any, b: any) => (b.votes - a.votes) || (a.created_at - b.created_at)),
+        }
+      }
+      if (s.startsWith('delete from music_queue')) {
+        return {
+          run: () => {
+            state.music_queue = []
+            scheduleSave()
+          },
+          get: () => undefined,
+          all: () => [],
+        }
+      }
+      if (s.startsWith('insert into music_queue')) {
+        return {
+          run: (id: string, title: string, artist: string, mood: string, bpm: number, style: string, duration_sec: number, suggested_by: string, votes: number, audio_url: string | null, created_at: number) => {
+            state.music_queue.push({ id, title, artist, mood, bpm, style, duration_sec, suggested_by, votes, audio_url, created_at })
+            scheduleSave()
+          },
+          get: () => undefined,
+          all: () => [],
+        }
+      }
+      return { run: () => {}, get: () => undefined, all: () => [] }
+    },
+  }
+}
+
+let db: DatabaseLike
+
+const require = createRequire(import.meta.url)
+try {
+  const sqlite = require('node:sqlite')
+  const dbPath = path.join(dataDir, 'kchill.sqlite')
+  db = new sqlite.DatabaseSync(dbPath)
+  console.log('[K-CHILL Storage] Native node:sqlite connected successfully at', dbPath)
+} catch (err: any) {
+  console.warn('[K-CHILL Storage] Native node:sqlite unavailable (' + err?.message + '); using resilient JSON/in-memory store.')
+  db = createFallbackDb(dataDir)
+}
 
 db.exec(`
   PRAGMA journal_mode = WAL;

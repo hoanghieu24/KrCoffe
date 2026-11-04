@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k \"npm:dev:server\" \"npm:dev:client\"",
-    "dev:server": "tsx server/index.ts",
+    "dev:server": "node --experimental-sqlite --import tsx server/index.ts",
     "dev:client": "vite",
     "build": "tsc -b && vite build",
-    "start": "tsx server/index.ts",
+    "start": "node --experimental-sqlite --import tsx server/index.ts",
     "preview": "vite preview"
   },
   "dependencies": {
