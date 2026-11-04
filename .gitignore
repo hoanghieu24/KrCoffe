@@ -8,3 +8,4 @@ dist/
 debug*.png
 scratch/
 .make-asset-sheet.py
+server/data/*.sqlite*
