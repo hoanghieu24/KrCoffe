@@ -6,7 +6,7 @@ import './styles.css'
 
 const isAdminRoute =
   typeof window !== 'undefined' &&
-  (window.location.pathname.startsWith('/admin') || window.location.hash.startsWith('#admin'))
+  (window.location.pathname.startsWith('/hieuadmin') || window.location.hash.startsWith('#hieuadmin'))
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -100,8 +100,8 @@ export class CafeMap {
     const pos = this.iso(1.45, 5.8)
     return {
       counterPt: { x: pos.x, y: pos.y + 26 },
-      // Barista stands centered in the open station between bakery case and espresso machine at perfect waist height
-      homePt: { x: pos.x - 2, y: pos.y - 6 },
+      // Barista stands centered in open station at perfect waist height (chest, face, arms & cute sweater fully visible)
+      homePt: { x: pos.x + 6, y: pos.y - 22 },
       exitPt: { x: pos.x + this.stepX * 2.3, y: pos.y + this.stepY * 1.8 + 12 },
     }
   }
@@ -305,8 +305,8 @@ export class CafeMap {
     const counterH = this.stepX * 4.4
 
     // Layer 1: Back appliances (bakery display case, espresso machine, back shelves)
-    // Rendered at depth pos.y - 14, behind Barista (depth pos.y - 4)
-    this.sprite('counter-appliances', pos.x, pos.y + 12, counterW, counterH, pos.y - 14, 0.5, 0.88)
+    // Rendered at depth pos.y - 35, behind Barista (depth pos.y - 20)
+    this.sprite('counter-appliances', pos.x, pos.y + 12, counterW, counterH, pos.y - 35, 0.5, 0.88)
 
     // Layer 2: Front wooden counter bar & ledge (rendered at depth pos.y + 22, in front of Barista's waist/legs)
     // Sized and positioned with identical registration (512x512) so there is zero gap or floating seam
