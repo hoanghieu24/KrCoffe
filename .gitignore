@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.chrome-debug-profile/
+debug*.png
+scratch/
+.make-asset-sheet.py
